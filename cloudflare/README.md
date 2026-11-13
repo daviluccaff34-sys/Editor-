@@ -1,42 +1,46 @@
 # Editor++ Cloudflare backend
 
-This folder defines the first backend contract for Editor++.
+This folder contains the first deployable API foundation for Editor++.
 
-## Responsibilities
+## Architecture
 
-- **GitHub** stores the source code and runs Android Geode builds.
-- **Cloudflare Worker** exposes the public API.
-- **D1** stores the searchable directory of online rooms.
-- **Durable Objects** coordinate each room's live WebSocket connections and shared editing state.
-- **Admin panel** is a separate protected interface. It must be placed behind Cloudflare Access before it is exposed.
+- **GitHub** stores the mod and backend source and runs the Geode Android32/Android64 builds.
+- **Cloudflare Worker** exposes the room-directory API.
+- **D1** stores online room listings.
+- **Durable Objects** will coordinate each room's live WebSocket connections and collaborative editing state; that realtime layer is not implemented yet.
+- **Admin panel** is served separately and its API endpoints validate Cloudflare Access JWTs.
 
-## Room discovery rules
+## Room rules
 
-1. A player must have a Geometry Dash account to use Host or Join.
-2. When a player opens the friends list, Editor++ reads the player's Geometry Dash friends who also use Editor++.
-3. The API returns an open room automatically when its host is in that player's GD friends list.
-4. A room hosted by a non-friend is not shown in the automatic friends list.
-5. A player can still join a non-friend's room by entering its room code.
-6. Every room supports at most four players.
-7. LAN rooms are local and do not appear in the Cloudflare online-room directory.
+1. A player needs a Geometry Dash account to use Host or Join. No Editor++ account is part of the design.
+2. The mod supplies the player's GD account ID and player name to the API.
+3. The mod reads the player's GD friends who also use Editor++ and supplies their GD account IDs to the friends-room endpoint.
+4. Open rooms hosted by those friends appear automatically.
+5. Rooms hosted by non-friends are not shown in the automatic friends list; those rooms are joined with their six-character code.
+6. Each online room has a maximum of four players.
+7. LAN rooms stay local and are not listed by this API.
 
-The friends-list behavior is a discovery rule, not an extra account system. No Editor++ account or external social account is required.
+The initial API accepts the GD account ID supplied by the mod. A real client integration and account-presence check in the game are still required; this API foundation does not independently prove that an arbitrary submitted ID belongs to a logged-in player. Never request or store a Geometry Dash password.
 
-## Initial API contract
+## API routes
 
 - `GET /api/health` — service status.
-- `GET /api/rooms/friends?playerId=...&friends=id1,id2` — open online rooms hosted by the supplied GD friends.
-- `POST /api/rooms` — create an online room.
-- `POST /api/rooms/:code/join` — request to join by room code.
-- `GET /api/admin/rooms` — administrator room overview; must require Cloudflare Access.
-- `POST /api/admin/rooms/:code/close` — administrator closes a room; must require Cloudflare Access.
+- `GET /api/rooms/friends?playerId=...&friends=id1,id2` — open rooms hosted by the supplied GD friends.
+- `POST /api/rooms` — create an online room. JSON: `{"gdAccountId":"...","playerName":"..."}`.
+- `POST /api/rooms/:code/join` — join by code. JSON: `{"gdAccountId":"...","playerName":"..."}`.
+- `GET /api/admin/rooms` — administrator room overview; requires a valid Cloudflare Access JWT.
+- `POST /api/admin/rooms/:code/close` — administrator closes a room; requires a valid Cloudflare Access JWT.
 
-The API contract is a development specification, not a deployed service yet. Host/Join must not be treated as account-verified until the Geometry Dash account check is implemented and validated.
+## Cloudflare setup
 
-## Security notes
+1. Create a D1 database named `editor-plus-plus`.
+2. Put its database ID in `wrangler.toml`.
+3. Configure `ACCESS_TEAM_DOMAIN` and `ACCESS_AUD` for the Cloudflare Access application protecting the admin panel.
+4. Run `wrangler d1 migrations apply editor-plus-plus`.
+5. Deploy the Worker with Wrangler.
 
-- Never request or store a Geometry Dash password.
-- Do not trust a display name as proof of a GD account.
-- Do not expose admin endpoints based only on the presence of a request header. Validate Cloudflare Access JWTs server-side.
-- Room codes are for joining; friend discovery is filtered by GD player IDs.
-- The Worker must validate all inputs and enforce the four-player limit server-side.
+The values in `wrangler.toml` are placeholders; the Worker is not deployed until a real D1 database and Cloudflare account settings are supplied.
+
+## Current implementation limits
+
+This is the room-directory/API foundation, not the finished multiplayer system. The next engineering stages are Durable Object room sessions, WebSocket edit-event synchronization, duplicate-player/session handling, reliable GD friend-list integration, and the in-game Host/Join UI. The current Join route is only a directory-level prototype and must be upgraded to prevent duplicate joins before public use.
