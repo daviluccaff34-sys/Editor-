@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Editor++ · Administração</title>
+  <style>
+    :root{color-scheme:dark;font-family:Inter,system-ui,sans-serif;background:#0b0b10;color:#f4f2fa}
+    *{box-sizing:border-box}
+    body{margin:0;padding:24px;max-width:1100px;margin-inline:auto}
+    header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+    h1{font-size:1.65rem;margin:0}
+    p{color:#aaa5b7}
+    button{border:1px solid #514568;background:#211a2c;color:#fff;padding:10px 14px;border-radius:10px;font-weight:650}
+    button:disabled{opacity:.5}
+    .panel{margin-top:22px;border:1px solid #30283b;background:#121119;border-radius:16px;overflow:hidden}
+    .status{padding:14px 18px;border-bottom:1px solid #30283b;color:#c8c0d4}
+    .table-wrap{overflow-x:auto}
+    table{width:100%;border-collapse:collapse;min-width:620px}
+    th,td{text-align:left;padding:13px 16px;border-bottom:1px solid #292331;font-size:.92rem}
+    th{color:#aaa5b7;font-weight:600}
+    .empty{text-align:center;padding:36px;color:#aaa5b7}
+    .close{padding:7px 10px;font-size:.82rem}
+    .error{color:#ff9d9d}
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Editor++ · Painel administrativo</h1>
+      <p>Visão geral das salas online.</p>
+    </div>
+    <button id="refresh" type="button">Atualizar salas</button>
+  </header>
+  <main class="panel">
+    <div id="status" class="status" role="status">Carregando salas…</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Código</th><th>Host</th><th>Jogadores</th><th>Status</th><th>Ação</th></tr></thead>
+        <tbody id="rooms"></tbody>
+      </table>
+    </div>
+  </main>
+  <script>
+    const statusNode = document.querySelector("#status");
+    const roomsNode = document.querySelector("#rooms");
+    const refreshButton = document.querySelector("#refresh");
+
+    function cell(row, value) {
+      const node = document.createElement("td");
+      node.textContent = value == null ? "—" : String(value);
+      row.append(node);
+      return node;
+    }
+
+    async function loadRooms() {
+      refreshButton.disabled = true;
+      statusNode.textContent = "Carregando salas…";
+      statusNode.classList.remove("error");
+      roomsNode.replaceChildren();
+      try {
+        const response = await fetch("/api/admin/rooms", {
+          headers: { "Accept": "application/json" },
+          credentials: "same-origin"
+        });
+        if (!response.ok) throw new Error(response.status === 401 || response.status === 403
+          ? "Acesso administrativo não autorizado."
+          : "Não foi possível carregar as salas.");
+        const payload = await response.json();
+        const rooms = Array.isArray(payload.rooms) ? payload.rooms : [];
+        statusNode.textContent = rooms.length + " sala(s) online registrada(s).";
+        if (!rooms.length) {
+          const row = document.createElement("tr");
+          const empty = document.createElement("td");
+          empty.colSpan = 5;
+          empty.className = "empty";
+          empty.textContent = "Nenhuma sala online no momento.";
+          row.append(empty);
+          roomsNode.append(row);
+          return;
+        }
+        for (const room of rooms) {
+          const row = document.createElement("tr");
+          cell(row, room.code);
+          cell(row, room.hostName);
+          cell(row, room.playerCount + "/4");
+          cell(row, room.status);
+          const actionCell = document.createElement("td");
+          if (room.status === "open") {
+            const closeButton = document.createElement("button");
+            closeButton.type = "button";
+            closeButton.className = "close";
+            closeButton.textContent = "Fechar sala";
+            closeButton.addEventListener("click", () => closeRoom(room.code, closeButton));
+            actionCell.append(closeButton);
+          } else {
+            actionCell.textContent = "—";
+          }
+          row.append(actionCell);
+          roomsNode.append(row);
+        }
+      } catch (error) {
+        statusNode.textContent = error.message || "Erro ao carregar.";
+        statusNode.classList.add("error");
+      } finally {
+        refreshButton.disabled = false;
+      }
+    }
+
+    async function closeRoom(code, button) {
+      if (!confirm("Fechar a sala " + code + "?")) return;
+      button.disabled = true;
+      try {
+        const response = await fetch("/api/admin/rooms/" + encodeURIComponent(code) + "/close", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Accept": "application/json" }
+        });
+        if (!response.ok) throw new Error("Não foi possível fechar a sala.");
+        await loadRooms();
+      } catch (error) {
+        statusNode.textContent = error.message || "Erro ao fechar a sala.";
+        statusNode.classList.add("error");
+        button.disabled = false;
+      }
+    }
+
+    refreshButton.addEventListener("click", loadRooms);
+    loadRooms();
+  </script>
+</body>
+</html>
