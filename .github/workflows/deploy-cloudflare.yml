@@ -2,11 +2,6 @@ name: Deploy Editor++ Cloudflare API
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - "cloudflare/**"
-      - ".github/workflows/deploy-cloudflare.yml"
-    branches: [ main ]
 
 permissions:
   contents: read
