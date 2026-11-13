@@ -11,3 +11,11 @@ binding = "DB"
 database_name = "editor-plus-plus"
 database_id = "CREATE_D1_DATABASE_AND_PASTE_ID_HERE"
 migrations_dir = "migrations"
+
+[[durable_objects.bindings]]
+name = "ROOMS"
+class_name = "EditorRoom"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["EditorRoom"]
