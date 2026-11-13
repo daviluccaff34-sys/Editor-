@@ -1,0 +1,13 @@
+name = "editor-plus-plus-api"
+main = "src/index.ts"
+compatibility_date = "2026-11-13"
+
+[vars]
+ACCESS_TEAM_DOMAIN = "YOUR-TEAM.cloudflareaccess.com"
+ACCESS_AUD = "YOUR_CLOUDFLARE_ACCESS_APPLICATION_AUD"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "editor-plus-plus"
+database_id = "CREATE_D1_DATABASE_AND_PASTE_ID_HERE"
+migrations_dir = "migrations"
