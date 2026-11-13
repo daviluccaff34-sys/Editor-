@@ -1,0 +1,12 @@
+{
+  "geode": "v5.11.2",
+  "gd": {
+    "android": "2.2081",
+    "win": "2.2081"
+  },
+  "id": "editorplusplus.editorplusplus",
+  "name": "Editor++",
+  "version": "v0.1.0",
+  "developer": "Davi",
+  "description": "Collaborative Geometry Dash level editor for up to four participants."
+}
