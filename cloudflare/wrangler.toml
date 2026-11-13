@@ -9,7 +9,7 @@ ACCESS_AUD = "YOUR_CLOUDFLARE_ACCESS_APPLICATION_AUD"
 [[d1_databases]]
 binding = "DB"
 database_name = "editor-plus-plus"
-database_id = "CREATE_D1_DATABASE_AND_PASTE_ID_HERE"
+database_id = "f9d4de93-b970-4c59-b0a9-49fce3ae2645"
 migrations_dir = "migrations"
 
 [[durable_objects.bindings]]
