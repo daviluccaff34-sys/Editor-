@@ -1,7 +1,7 @@
-export interface Env {
+import { EditorRoom } from "./room";\n\nexport interface Env {
   DB: D1Database;
   ACCESS_TEAM_DOMAIN: string;
-  ACCESS_AUD: string;
+  ACCESS_AUD: string;\n  ROOMS: DurableObjectNamespace<EditorRoom>;
 }
 
 type RoomRow = {
@@ -158,6 +158,26 @@ export default {
         ).bind(Date.now(), joinMatch[1], accountId).first<{ room_code: string; player_count: number }>();
         if (!result) return json({ error: "room_unavailable_or_full" }, 409);
         return json({ ok: true, code: result.room_code, playerCount: result.player_count, maxPlayers: 4 });
+      }
+
+      const connectMatch = path.match(/^\\/api\\/rooms\\/([A-Z0-9]{6})\\/connect$/);
+      if (request.method === "GET" && connectMatch) {
+        const accountId = cleanText(url.searchParams.get("gdAccountId"), 32);
+        const playerName = cleanText(url.searchParams.get("playerName"), 32);
+        if (!accountId || !/^\\d{1,32}$/.test(accountId) || !playerName) {
+          return json({ error: "geometry_dash_account_required" }, 400);
+        }
+        const room = await env.DB.prepare(
+          "SELECT room_code FROM rooms WHERE room_code = ? AND status = 'open'"
+        ).bind(connectMatch[1]).first();
+        if (!room) return json({ error: "room_not_found" }, 404);
+        const stub = env.ROOMS.getByName(connectMatch[1]);
+        const headers = new Headers(request.headers);
+        headers.set("X-GD-Account-ID", accountId);
+        headers.set("X-GD-Player-Name", playerName);
+        return stub.fetch(new Request("https://room.internal/connect", {
+          method: "GET", headers
+        }));
       }
 
       if (request.method === "GET" && path === "/api/admin/rooms") {
