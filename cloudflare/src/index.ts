@@ -177,7 +177,8 @@ export default {
         const stub = env.ROOMS.getByName(connectMatch[1]);
         const headers = new Headers(request.headers);
         headers.set("X-GD-Account-ID", accountId);
-        headers.set("X-GD-Player-Name", playerName);\n        headers.set("X-ROOM-CODE", connectMatch[1]);
+        headers.set("X-GD-Player-Name", playerName);
+        headers.set("X-ROOM-CODE", connectMatch[1]);
         return stub.fetch(new Request("https://room.internal/connect", {
           method: "GET", headers
         }));
