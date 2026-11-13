@@ -1,7 +1,10 @@
-import { EditorRoom } from "./room";\n\nexport interface Env {
+import { EditorRoom } from "./room";
+
+export interface Env {
   DB: D1Database;
   ACCESS_TEAM_DOMAIN: string;
-  ACCESS_AUD: string;\n  ROOMS: DurableObjectNamespace<EditorRoom>;
+  ACCESS_AUD: string;
+  ROOMS: DurableObjectNamespace<EditorRoom>;
 }
 
 type RoomRow = {
@@ -160,11 +163,11 @@ export default {
         return json({ ok: true, code: result.room_code, playerCount: result.player_count, maxPlayers: 4 });
       }
 
-      const connectMatch = path.match(/^\\/api\\/rooms\\/([A-Z0-9]{6})\\/connect$/);
+      const connectMatch = path.match(/^\/api\\/rooms\\/([A-Z0-9]{6})\\/connect$/);
       if (request.method === "GET" && connectMatch) {
         const accountId = cleanText(url.searchParams.get("gdAccountId"), 32);
         const playerName = cleanText(url.searchParams.get("playerName"), 32);
-        if (!accountId || !/^\\d{1,32}$/.test(accountId) || !playerName) {
+        if (!accountId || !/^\d{1,32}$/.test(accountId) || !playerName) {
           return json({ error: "geometry_dash_account_required" }, 400);
         }
         const room = await env.DB.prepare(
