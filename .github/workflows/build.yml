@@ -1,0 +1,39 @@
+name: Build Editor++
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    name: Build Android ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [ Android32, Android64 ]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Geode mod
+        id: build
+        uses: geode-sdk/build-geode-mod@main
+        with:
+          sdk: given
+          target: ${{ matrix.target }}
+          path: .
+
+      - name: Upload .geode artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: EditorPlusPlus-${{ matrix.target }}
+          path: ${{ steps.build.outputs.build-output }}
+          if-no-files-found: error
