@@ -7,7 +7,7 @@ This folder contains the first deployable API foundation for Editor++.
 - **GitHub** stores the mod and backend source and runs the Geode Android32/Android64 builds.
 - **Cloudflare Worker** exposes the room-directory API.
 - **D1** stores online room listings.
-- **Durable Objects** will coordinate each room's live WebSocket connections and collaborative editing state; that realtime layer is not implemented yet.
+- **Durable Objects** coordinate each online room's live WebSocket connections, player presence, and edit-event relay. The first WebSocket layer is implemented; editor-specific object operations and conflict resolution are still pending.
 - **Admin panel** is served separately and its API endpoints validate Cloudflare Access JWTs.
 
 ## Room rules
@@ -27,7 +27,8 @@ The initial API accepts the GD account ID supplied by the mod. A real client int
 - `GET /api/health` — service status.
 - `GET /api/rooms/friends?playerId=...&friends=id1,id2` — open rooms hosted by the supplied GD friends.
 - `POST /api/rooms` — create an online room. JSON: `{"gdAccountId":"...","playerName":"..."}`.
-- `POST /api/rooms/:code/join` — join by code. JSON: `{"gdAccountId":"...","playerName":"..."}`.
+- `POST /api/rooms/:code/join` — validate that a code is joinable. JSON: `{"gdAccountId":"...","playerName":"..."}`.
+- `GET /api/rooms/:code/connect?gdAccountId=...&playerName=...` — upgrade to the room WebSocket for live presence and `edit`/`cursor` event relay.
 - `GET /api/admin/rooms` — administrator room overview; requires a valid Cloudflare Access JWT.
 - `POST /api/admin/rooms/:code/close` — administrator closes a room; requires a valid Cloudflare Access JWT.
 
@@ -43,4 +44,4 @@ The values in `wrangler.toml` are placeholders; the Worker is not deployed until
 
 ## Current implementation limits
 
-This is the room-directory/API foundation, not the finished multiplayer system. The next engineering stages are Durable Object room sessions, WebSocket edit-event synchronization, duplicate-player/session handling, reliable GD friend-list integration, and the in-game Host/Join UI. The current Join route is only a directory-level prototype and must be upgraded to prevent duplicate joins before public use.
+This is the room-directory/API foundation, not the finished multiplayer system. The next engineering stages are the actual Geometry Dash editor hooks and edit-operation format, conflict resolution, reliable GD friend-list integration, client-side account-state gating, and the in-game Host/Join UI. The current API accepts account IDs supplied by the mod; it does not prove account ownership independently. The room WebSocket prevents duplicate simultaneous connections and enforces four live connections, but the client must call the connect route after checking/joining a room.
