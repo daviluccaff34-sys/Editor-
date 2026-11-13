@@ -163,7 +163,7 @@ export default {
         return json({ ok: true, code: result.room_code, playerCount: result.player_count, maxPlayers: 4 });
       }
 
-      const connectMatch = path.match(/^\/api\\/rooms\\/([A-Z0-9]{6})\\/connect$/);
+      const connectMatch = path.match(/^\/api\/rooms\/([A-Z0-9]{6})\/connect$/);
       if (request.method === "GET" && connectMatch) {
         const accountId = cleanText(url.searchParams.get("gdAccountId"), 32);
         const playerName = cleanText(url.searchParams.get("playerName"), 32);
