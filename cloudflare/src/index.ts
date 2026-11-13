@@ -157,9 +157,9 @@ export default {
           return json({ error: "geometry_dash_account_required" }, 400);
         }
         const result = await env.DB.prepare(
-          "UPDATE rooms SET player_count = player_count + 1, updated_at = ? WHERE room_code = ? AND status = 'open' AND player_count < 4 AND host_gd_account_id != ? RETURNING room_code, player_count"
-        ).bind(Date.now(), joinMatch[1], accountId).first<{ room_code: string; player_count: number }>();
-        if (!result) return json({ error: "room_unavailable_or_full" }, 409);
+          "SELECT room_code, player_count FROM rooms WHERE room_code = ? AND status = 'open' AND host_gd_account_id != ?"
+        ).bind(joinMatch[1], accountId).first<{ room_code: string; player_count: number }>();
+        if (!result) return json({ error: "room_unavailable" }, 409);
         return json({ ok: true, code: result.room_code, playerCount: result.player_count, maxPlayers: 4 });
       }
 
@@ -177,7 +177,7 @@ export default {
         const stub = env.ROOMS.getByName(connectMatch[1]);
         const headers = new Headers(request.headers);
         headers.set("X-GD-Account-ID", accountId);
-        headers.set("X-GD-Player-Name", playerName);
+        headers.set("X-GD-Player-Name", playerName);\n        headers.set("X-ROOM-CODE", connectMatch[1]);
         return stub.fetch(new Request("https://room.internal/connect", {
           method: "GET", headers
         }));
