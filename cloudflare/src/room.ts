@@ -89,9 +89,6 @@ export class EditorRoom extends DurableObject<RoomEnv> {
     const remaining = this.ctx.getWebSockets()
       .filter(item => item !== socket)
       .map(item => item.deserializeAttachment() as ClientInfo);
-    if (client.gdAccountId === (remaining[0]?.roomCode ? client.gdAccountId : "")) {
-      // Host ownership is checked against the room record below.
-    }
     const room = await this.env.DB.prepare(
       "SELECT host_gd_account_id FROM rooms WHERE room_code = ?"
     ).bind(client.roomCode).first<{ host_gd_account_id: string }>();
